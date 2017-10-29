@@ -2,8 +2,9 @@
 var conference = artifacts.require("./Conference.sol");
 
 // Test suite
-contract('Conference', function(accounts) {
+contract('Conference', function (accounts) {
     var contractInstance;
+    var registrationPrice = 1.8;
     var owner = accounts[0];
     var talkTitle = "Talk 1";
     var location = "Room 1";
@@ -11,6 +12,11 @@ contract('Conference', function(accounts) {
     var endTime = new Date('11/07/2017 12:30').getTime() / 1000;
     var speakerAccount = "0x45b23edabf54872331e9a9ea24e113a7a61265f5";
     var speakerFullName = "John Doe";
+    var attendee = accounts[1];
+    var attendeeFullName = "Rick Deckard";
+    var balanceAttendeeBefore, balanceAttendeeAfter;
+    var balanceContractBefore, balanceContractAfter;
+
 
     // Test case: check initial values
     it("should be initialized with empty values", function () {
@@ -40,7 +46,7 @@ contract('Conference', function(accounts) {
                 speakerFullName, {
                     from: owner
                 });
-        }).then(function() {
+        }).then(function () {
             return contractInstance.getTalk();
         }).then(function (data) {
             assert.equal(data[0], talkTitle, "talk name must " + talkTitle);
@@ -66,13 +72,45 @@ contract('Conference', function(accounts) {
                 speakerFullName, {
                     from: owner
                 });
-        }).then(function(receipt) {
+        }).then(function (receipt) {
             //check event
             assert.equal(receipt.logs.length, 1, "should have received one event");
             assert.equal(receipt.logs[0].event, "AddTalkEvent", "event name should be AddTalkEvent");
             assert.equal(receipt.logs[0].args._title, talkTitle, "title must be " + talkTitle);
             assert.equal(receipt.logs[0].args._startTime.toNumber(), startTime, "start time name must be " + startTime);
             assert.equal(receipt.logs[0].args._endTime.toNumber(), endTime, "end time name must be " + endTime);
+        });
+    });
+
+    // Test case: register an attendee
+    it("should register an attendee", function () {
+        return conference.deployed().then(function (instance) {
+            contractInstance = instance;
+
+            balanceAttendeeBefore = web3.fromWei(web3.eth.getBalance(attendee), "ether");
+            balanceContractBefore = web3.fromWei(web3.eth.getBalance(conference.address), "ether");
+
+            return contractInstance.register(attendeeFullName, {
+                from: attendee,
+                value: web3.toWei(registrationPrice, "ether"),
+                gas: 500000
+            });
+        }).then(function (receipt) {
+            //check event
+            assert.equal(receipt.logs.length, 1, "should have received one event");
+            assert.equal(receipt.logs[0].event, "RegisterEvent", "event name should be RegisterEvent");
+            assert.equal(receipt.logs[0].args._account, attendee, "full name must be " + attendee);
+            assert.equal(receipt.logs[0].args._name, attendeeFullName, "full name must be " + attendeeFullName);
+
+            return contractInstance.isRegistered(attendee);
+        }).then(function (data) {
+            assert.equal(data, true, "attendee should be registered");
+
+            balanceAttendeeAfter = web3.fromWei(web3.eth.getBalance(attendee), "ether");
+            balanceContractAfter = web3.fromWei(web3.eth.getBalance(conference.address), "ether");
+
+            assert(web3.toDecimal(balanceContractAfter) == web3.toDecimal(balanceContractBefore + registrationPrice), "contract should have earned " + registrationPrice + " ETH")
+            assert(web3.toDecimal(balanceAttendeeAfter) <= web3.toDecimal(balanceAttendeeBefore - registrationPrice), "attendee should have spent " + registrationPrice + " ETH")
         });
     });
 });
