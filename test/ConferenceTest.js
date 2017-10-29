@@ -51,5 +51,29 @@ contract('Conference', function(accounts) {
             assert.equal(data[5], speakerFullName, "speaker name must be " + speakerFullName);
         });
     });
+
+    // Test case: should check events
+    it("should trigger an event when a new talk is added", function () {
+        return conference.deployed().then(function (instance) {
+            contractInstance = instance;
+
+            return contractInstance.addTalk(
+                talkTitle,
+                location,
+                startTime,
+                endTime,
+                speakerAccount,
+                speakerFullName, {
+                    from: owner
+                });
+        }).then(function(receipt) {
+            //check event
+            assert.equal(receipt.logs.length, 1, "should have received one event");
+            assert.equal(receipt.logs[0].event, "AddTalkEvent", "event name should be AddTalkEvent");
+            assert.equal(receipt.logs[0].args._title, talkTitle, "title must be " + talkTitle);
+            assert.equal(receipt.logs[0].args._startTime.toNumber(), startTime, "start time name must be " + startTime);
+            assert.equal(receipt.logs[0].args._endTime.toNumber(), endTime, "end time name must be " + endTime);
+        });
+    });
 });
 
