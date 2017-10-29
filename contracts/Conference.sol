@@ -10,8 +10,14 @@ contract Conference {
     address speakerAddress;
     string speakerName;
 
+    address attendeeAddress;
+    string attendeeName;
+
+    uint256 constant REGISTRATION_PRICE = 1800000000000000000;
+
     // Events
     event AddTalkEvent(string _title, uint _startTime, uint _endTime);
+    event RegisterEvent(address indexed _account, string _name);
 
     // add an talk
     function addTalk(
@@ -22,7 +28,6 @@ contract Conference {
         address _speakerAddress,
         string _speakerName
         ) public {
-
 
         title = _title;
         location = _location;
@@ -44,5 +49,33 @@ contract Conference {
         string _speakerName) {
 
         return (title, location, startTime, endTime, speakerAddress, speakerName);
+    }
+
+    // register an attendee to the conference
+    // returns true if the registration is successful
+    function register(string _fullName) public payable {
+
+        // the price to pay must be the same as the registration price
+        require(msg.value == REGISTRATION_PRICE);
+
+        // not already registered
+        require(msg.sender != attendeeAddress);
+
+        // register the attendee
+        attendeeAddress = msg.sender;
+        attendeeName = _fullName;
+
+        RegisterEvent(attendeeAddress, attendeeName);
+    }
+
+    // check if an attendee is registered
+    // returns true if the attendee is registered
+    function isRegistered(address _account) public constant returns (bool) {
+        if ((_account != attendeeAddress) || (_account == 0x0)) {
+            // not registered or no registration yet or
+            return false;
+        }
+
+        return true;
     }
 }
