@@ -10,6 +10,8 @@ contract Conference {
     address speakerAddress;
     string speakerName;
 
+    // Events
+    event AddTalkEvent(string _title, uint _startTime, uint _endTime);
 
     // add an talk
     function addTalk(
@@ -28,6 +30,8 @@ contract Conference {
         endTime = _endTime;
         speakerAddress = _speakerAddress;
         speakerName = _speakerName;
+
+        AddTalkEvent(title, startTime, endTime);
     }
 
     // get the talk
