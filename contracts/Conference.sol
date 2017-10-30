@@ -19,13 +19,18 @@ contract Conference {
         uint[] talksId;
     }
 
+    struct Attendee {
+        address account;
+        string fullName;
+    }
+
+
     // State variables
     mapping (uint => Talk) public talks;
     mapping (address => Speaker) public speakers;
     uint totalTalks;
 
-    address attendeeAddress;
-    string attendeeName;
+    mapping (address => Attendee) public attendees;
 
     // constants
     uint256 constant REGISTRATION_PRICE = 1800000000000000000;
@@ -227,27 +232,25 @@ contract Conference {
     */
 
     // register an attendee to the conference
-    // returns true if the registration is successful
     function register(string _fullName) public payable {
 
-        // the price to pay must be the same as the registration price
+        // check required fields
         require(msg.value == REGISTRATION_PRICE);
 
         // not already registered
-        require(msg.sender != attendeeAddress);
+        require(attendees[msg.sender].account == 0x0);
 
-        // register the attendee
-        attendeeAddress = msg.sender;
-        attendeeName = _fullName;
+        attendees[msg.sender] = Attendee(msg.sender, _fullName);
 
-        RegisterEvent(attendeeAddress, attendeeName);
+        // trigger the event
+        RegisterEvent(msg.sender, _fullName);
     }
 
     // check if an attendee is registered
     // returns true if the attendee is registered
     function isRegistered(address _account) public constant returns (bool) {
-        if ((_account != attendeeAddress) || (_account == 0x0)) {
-            // not registered or no registration yet or
+        Attendee memory attendee = attendees[_account];
+        if (attendee.account == 0x0) {
             return false;
         }
 
