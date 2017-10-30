@@ -22,8 +22,10 @@ contract('Conference', function (accounts) {
     var speaker1_fullName = "John Doe";
     var speaker2_account = accounts[2];
     var speaker2_fullName = "Claire Smith";
-    var attendee = accounts[3];
-    var attendeeFullName = "Rick Deckard";
+    var attendee1 = accounts[3];
+    var attendeed1_FullName = "Rick Deckard";
+    var attendee2 = accounts[4];
+    var attendeed2_FullName = "Niander Wallace";
     var balanceAttendeeBefore, balanceAttendeeAfter;
     var balanceContractBefore, balanceContractAfter;
 
@@ -233,35 +235,63 @@ contract('Conference', function (accounts) {
         });
     });
 
-    // Test case: register an attendee
-    it("should register an attendee", function () {
-        return conference.deployed().then(function (instance) {
+    it("should register a first attendee", function() {
+        return conference.deployed().then(function(instance) {
             contractInstance = instance;
 
-            balanceAttendeeBefore = web3.fromWei(web3.eth.getBalance(attendee), "ether");
+            balanceAttendeeBefore = web3.fromWei(web3.eth.getBalance(attendee1), "ether");
             balanceContractBefore = web3.fromWei(web3.eth.getBalance(conference.address), "ether");
 
-            return contractInstance.register(attendeeFullName, {
-                from: attendee,
+            return contractInstance.register(attendeed1_FullName, {
+                from: attendee1,
                 value: web3.toWei(registrationPrice, "ether"),
                 gas: 500000
             });
-        }).then(function (receipt) {
+        }).then(function(receipt) {
             //check event
             assert.equal(receipt.logs.length, 1, "should have received one event");
             assert.equal(receipt.logs[0].event, "RegisterEvent", "event name should be RegisterEvent");
-            assert.equal(receipt.logs[0].args._account, attendee, "full name must be " + attendee);
-            assert.equal(receipt.logs[0].args._name, attendeeFullName, "full name must be " + attendeeFullName);
+            assert.equal(receipt.logs[0].args._name, attendeed1_FullName, "full name must be " + attendeed1_FullName);
 
-            return contractInstance.isRegistered(attendee);
-        }).then(function (data) {
+            return contractInstance.isRegistered(attendee1);
+        }).then(function(data) {
             assert.equal(data, true, "attendee should be registered");
 
-            balanceAttendeeAfter = web3.fromWei(web3.eth.getBalance(attendee), "ether");
+            balanceAttendeeAfter = web3.fromWei(web3.eth.getBalance(attendee1), "ether");
             balanceContractAfter = web3.fromWei(web3.eth.getBalance(conference.address), "ether");
 
             assert(web3.toDecimal(balanceContractAfter) == web3.toDecimal(balanceContractBefore + registrationPrice), "contract should have earned " + registrationPrice + " ETH")
             assert(web3.toDecimal(balanceAttendeeAfter) <= web3.toDecimal(balanceAttendeeBefore - registrationPrice), "attendee should have spent " + registrationPrice + " ETH")
+        });
+    });
+
+    it("should register a second attendee", function() {
+        return conference.deployed().then(function(instance) {
+            contractInstance = instance;
+
+            balanceAttendeeBefore = web3.fromWei(web3.eth.getBalance(attendee2), "ether");
+            balanceContractBefore = web3.fromWei(web3.eth.getBalance(conference.address), "ether");
+
+            return contractInstance.register(attendeed2_FullName, {
+                from: attendee2,
+                value: web3.toWei(registrationPrice, "ether"),
+                gas: 500000
+            });
+        }).then(function(receipt) {
+            //check event
+            assert.equal(receipt.logs.length, 1, "should have received one event");
+            assert.equal(receipt.logs[0].event, "RegisterEvent", "event name should be RegisterEvent");
+            assert.equal(receipt.logs[0].args._name, attendeed2_FullName, "full name must be " + attendeed2_FullName);
+
+            return contractInstance.isRegistered(attendee2);
+        }).then(function(data) {
+            assert.equal(data, true, "attendee should be registered");
+
+            balanceAttendeeAfter = web3.fromWei(web3.eth.getBalance(attendee2), "ether");
+            balanceContractAfter = web3.fromWei(web3.eth.getBalance(conference.address), "ether");
+
+            assert(web3.toDecimal(balanceContractAfter) == web3.toDecimal(balanceContractBefore) + web3.toDecimal(registrationPrice), "contract should have earned " + registrationPrice + " ETH")
+            assert(web3.toDecimal(balanceAttendeeAfter) <= web3.toDecimal(balanceAttendeeBefore) - web3.toDecimal(registrationPrice), "attendee should have spent " + registrationPrice + " ETH")
         });
     });
 });
