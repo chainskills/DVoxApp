@@ -378,4 +378,57 @@ contract Conference {
         return (totalRatings, totalVotes);
     }
 
+    /*
+         Rewards
+
+         All functions realted to the rewards earnd by the speakers.
+    */
+
+    // get the reward for a speaker identified by its address.
+    // rewards are not computed for canceled talks
+    // returns an array of rewards per talk
+    function getRewards(address _speaker) public constant returns (uint[] _talksId, uint256[] _rewards) {
+
+        // any talks for this potential speaker?
+        require(speakers[_speaker].account != 0x0);
+        require(speakers[_speaker].talksId.length > 0);
+
+        // prepare the output array
+        uint[] memory speakerTalksId = new uint[](speakers[_speaker].talksId.length);
+        uint256[] memory speakerRewards = new uint256[](speakers[_speaker].talksId.length);
+
+        // retrieve ratings and votes for all talks given by the speaker
+        for (uint i = 0; i < speakers[_speaker].talksId.length; i ++) {
+            uint talkId = speakers[_speaker].talksId[i];
+
+            // skip canceled talks
+            if (talks[talkId].canceled == false) {
+                Vote[] memory votes = allVotes[talkId];
+                // process votes for the talks given by the speaker
+                uint totalRatings = 0;
+                uint totalVotes = 0;
+                for (uint j = 0; j < votes.length; j ++) {
+                    Vote memory vote = votes[j];
+
+                    // skip deleted votes
+                    if (vote.attendee != 0x0) {
+                        totalRatings += vote.rating;
+                        totalVotes ++;
+                    }
+                }
+
+                // save the information
+                speakerTalksId[i] = talkId;
+                speakerRewards[i] = computeReward(totalRatings, totalVotes);
+            }
+        }
+
+        return (speakerTalksId, speakerRewards);
+    }
+
+    // computer the reward earned by a speaker
+    function computeReward(uint ratings, uint votes) internal returns (uint256) {
+        return ((ratings * votes * REGISTRATION_PRICE) / 1000);
+    }
+
 }
