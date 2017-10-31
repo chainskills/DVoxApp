@@ -3,6 +3,7 @@ pragma solidity ^0.4.15;
 
 contract Conference {
     // State variables
+    address owner;
     string title;
     string location;
     uint startTime;
@@ -10,6 +11,11 @@ contract Conference {
     address speakerAddress;
     string speakerName;
 
+
+    // constructor
+    function Conference() {
+        owner = msg.sender;
+    }
 
     // add an talk
     function addTalk(
@@ -21,6 +27,9 @@ contract Conference {
         string _speakerName
         ) public {
 
+        if (msg.sender != owner) {
+            return;
+        }
 
         title = _title;
         location = _location;
