@@ -3,6 +3,7 @@ pragma solidity ^0.4.15;
 
 contract Conference {
     // State variables
+    address owner;
     string title;
     string location;
     uint startTime;
@@ -19,6 +20,11 @@ contract Conference {
     event AddTalkEvent(string _title, uint _startTime, uint _endTime);
     event RegisterEvent(address indexed _account, string _name);
 
+    // constructor
+    function Conference() {
+        owner = msg.sender;
+    }
+
     // add an talk
     function addTalk(
         string _title,
@@ -29,6 +35,10 @@ contract Conference {
         string _speakerName
         ) public {
 
+        if (msg.sender != owner) {
+            return;
+        }
+
         title = _title;
         location = _location;
         startTime = _startTime;
@@ -38,7 +48,6 @@ contract Conference {
 
         AddTalkEvent(title, startTime, endTime);
     }
-
     // get the talk
     function getTalk() public constant returns (
         string _title,
