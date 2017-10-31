@@ -389,7 +389,7 @@ contract('Conference', function (accounts) {
             return contractInstance.getRatings(3);
         }).then(function (ratings) {
             assert.equal(web3.toDecimal(ratings[0]), 4, "ratings should be 4");
-            assert.equal(web3.toDecimal(ratings[1]), 1, "number of votes should be 1");
+            assert.equal(web3.toDecimal(ratings[1]), 1, "num3ber of votes should be 1");
 
             return contractInstance.getRatings(1);
         }).then(function (ratings) {
@@ -413,4 +413,27 @@ contract('Conference', function (accounts) {
             });
     });
 
+    it("should first speaker receive rewards", function() {
+        return conference.deployed().then(function(instance) {
+            return instance.getRewards(speaker1_account);
+        }).then(function(rewards) {
+            assert.equal(rewards[1].length, 2, "speaker1 should received 2 rewards");
+            assert.equal(web3.toDecimal(rewards[0][0]), 1, "talkId should be 1");
+            assert.equal(web3.toDecimal(rewards[1][0]), 3600000000000000, "reward should be 3600000000000000");
+            assert.equal(web3.toDecimal(rewards[0][1]), 3, "talkId should be 3");
+            assert.equal(web3.toDecimal(rewards[1][1]), 7200000000000000, "reward should be 7200000000000000");
+        });
+    });
+
+    it("should second speaker receive rewards", function() {
+        return conference.deployed().then(function(instance) {
+            return instance.getRewards(speaker2_account);
+        }).then(function(rewards) {
+            assert.equal(rewards[1].length, 2, "speaker2 should received 2 rewards");
+            assert.equal(web3.toDecimal(rewards[0][0]), 1, "talkId should be 1");
+            assert.equal(web3.toDecimal(rewards[1][0]), 3600000000000000, "reward should be 3600000000000000");
+            assert.equal(web3.toDecimal(rewards[0][1]), 2, "talkId should be 2");
+            assert.equal(web3.toDecimal(rewards[1][1]), 0, "reward should be 0");
+        });
+    });
 });
