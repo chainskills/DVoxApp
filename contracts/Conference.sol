@@ -24,6 +24,13 @@ contract Conference {
         string fullName;
     }
 
+    struct Vote {
+        uint talkId;
+        address attendee;
+        uint rating;
+        string comment;
+    }
+
 
     // State variables
     mapping (uint => Talk) public talks;
@@ -32,6 +39,9 @@ contract Conference {
 
     mapping (address => Attendee) public attendees;
 
+    mapping (address => Vote[]) public allAttendeeVotes;
+    mapping (uint => Vote[]) public allVotes;
+
     // constants
     uint256 constant REGISTRATION_PRICE = 1800000000000000000;
 
@@ -39,6 +49,7 @@ contract Conference {
     event AddTalkEvent(uint indexed _id, string _title, uint _startTime, uint _endTime);
     event CancelTalkEvent(uint indexed _id, string _title, uint _startTime, uint _endTime);
     event RegisterEvent(address indexed _account, string _name);
+    event NewVoteEvent(uint indexed _talkId, address _attendee, uint _vote);
 
 
     /*
@@ -256,4 +267,115 @@ contract Conference {
 
         return true;
     }
+
+
+    /*
+     Votes
+
+     All functions realted to the vote from attendees.
+    */
+
+    // check if a talk is open for votes
+    // the grace time is +/- 15 minutes from the endTime
+    // returns true if votes are open
+    function isVoteOpen(uint _talkId) public constant returns (bool) {
+        Talk memory talk = talks[_talkId];
+
+        if (bytes(talks[_talkId].title).length == 0) {
+            // do not exist
+            return false;
+        }
+
+        if (talk.canceled) {
+            // not active
+            return false;
+        }
+
+        uint currentTime = now;
+        if (currentTime < talk.startTime) {
+            // talk not started
+            return false;
+        }
+
+        // computer grace time (+/- 15 minutes from the end time)
+        uint graceTime = currentTime;
+        if (currentTime > talk.endTime) {
+            graceTime = currentTime - talk.endTime;
+        }
+        else {
+            graceTime = talk.endTime - currentTime;
+        }
+
+        if (graceTime <= (15 * 60)) {
+            // vote is open
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+    // add a vote to a talk
+    // trigger an event if the vote is taking into account
+    function addVote(uint _talkId, uint _vote, string _comment) public {
+        // ensure that the attendee is registered
+        require(attendees[msg.sender].account != 0x0);
+
+        // ensure that the vote is open for this talk
+        require(isVoteOpen(_talkId) == true);
+
+        // ensure that the vote is in the correct range
+        require(_vote <= 5);
+
+        // delete any vote for the same session
+        Vote[] memory votesAttendee = allAttendeeVotes[msg.sender];
+        for (uint i = 0; i < votesAttendee.length; i ++) {
+            if (isVoteOpen(votesAttendee[i].talkId)) {
+                // this talk is still open for a vote
+                // -> delete the vote to replace with the new one
+
+                // remove the vote linked to the attendee
+                delete allAttendeeVotes[msg.sender][i];
+
+                // remote the vote of this attendee
+                Vote[] memory votes = allVotes[votesAttendee[i].talkId];
+                for (uint j = 0; j < votes.length; j ++) {
+                    if (votes[i].attendee == msg.sender) {
+                        delete allVotes[votesAttendee[i].talkId][i];
+                    }
+                }
+            }
+        }
+
+        // add the vote
+        Vote memory vote = Vote(_talkId, msg.sender, _vote, _comment);
+        allVotes[_talkId].push(vote);
+        allAttendeeVotes[msg.sender].push(vote);
+
+        NewVoteEvent(_talkId, msg.sender, _vote);
+    }
+
+    // get the ratings for a talk identified by its ID
+    // returns the total ratings and the total of votes given to this talk
+    function getRatings(uint _talkId) public constant returns (uint _totalRatings, uint _totalVotes) {
+        // do we have some votes?
+        Vote[] memory votes = allVotes[_talkId];
+
+        if (votes.length == 0) {
+            return;
+        }
+
+        uint totalRatings = 0;
+        uint totalVotes = 0;
+        for (uint i = 0; i < votes.length; i ++) {
+            // skip deleted votes
+            if (votes[i].attendee != 0x0) {
+                totalRatings += votes[i].rating;
+                totalVotes ++;
+            }
+        }
+
+        return (totalRatings, totalVotes);
+    }
+
 }
