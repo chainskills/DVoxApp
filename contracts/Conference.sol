@@ -1,7 +1,8 @@
 pragma solidity ^0.4.15;
 
+import "./Ownable.sol";
 
-contract Conference {
+contract Conference is Ownable {
     // Custom types
     struct Talk {
         uint id;
@@ -68,7 +69,7 @@ contract Conference {
         uint _endTime,
         address[] _speakersAddress,
         bytes32[] _speakersNames
-        ) public {
+        ) public onlyOwner {
 
         // check required fields
         require(bytes(_title).length > 0);
@@ -104,7 +105,7 @@ contract Conference {
 
     // cancel a talk
     // trigger an event if the talk has been canceled
-    function cancelTalk(uint _talkId) public {
+    function cancelTalk(uint _talkId) public onlyOwner {
         // ensure that we have one talk related to this ID
         require(bytes(talks[_talkId].title).length > 0);
 
