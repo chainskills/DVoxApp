@@ -1,5 +1,5 @@
 {
-  "name": "pet-shop",
+  "name": "DVox",
   "version": "1.0.0",
   "description": "",
   "main": "truffle.js",
@@ -10,9 +10,13 @@
     "dev": "lite-server",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "ChainSkills",
+  "license": "MIT",
   "devDependencies": {
     "lite-server": "^2.3.0"
+  },
+  "dependencies": {
+    "eonasdan-bootstrap-datetimepicker": "^4.17.47",
+    "moment": "^2.19.1"
   }
 }
