@@ -409,7 +409,7 @@ contract('Conference', function (accounts) {
                 });
         }).then(assert.fail)
             .catch(function (error) {
-                assert(error.message.indexOf('invalid opcode') >= 0, "error should be invalid opcode");
+                assert(error.message.indexOf('revert') >= 0, "error should be revert");
             });
     });
 
