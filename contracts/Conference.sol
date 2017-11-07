@@ -526,6 +526,101 @@ contract Conference is Ownable {
         return (speakerTalksId, speakerRewards);
     }
 
+    // let a speaker to withdraw the reward
+    // a reward can be withdraw when the vote is closed
+    // transfer the reward to the speaker and mark it as paid
+    function withdrawReward() public {
+
+        address speaker = msg.sender;
+
+        // any talks for this potential speaker?
+        require(speakers[speaker].account != 0x0);
+        require(speakers[speaker].talksId.length > 0);
+
+        // keep rewards
+        uint256 rewards = 0;
+
+        // retrieve ratings and votes for all talks given by the speaker
+        for (uint i = 0; i < speakers[speaker].talksId.length; i ++) {
+            uint talkId = speakers[speaker].talksId[i];
+
+            // only for talks with votes closed and not already paid
+            if (isVoteClosed(talkId) && (paidRewards[speaker][talkId] == false)) {
+                Vote[] memory votes = allVotes[talkId];
+
+                // process votes for the talks given by the speaker
+                uint totalRatings = 0;
+                uint totalVotes = 0;
+                for (uint j = 0; j < votes.length; j ++) {
+                    Vote memory vote = votes[j];
+
+                    // skip deleted votes
+                    if (vote.attendee != 0x0) {
+                        totalRatings += vote.rating;
+                        totalVotes ++;
+                    }
+                }
+
+                // add the reward
+                rewards += computeReward(totalRatings, totalVotes);
+
+                paidRewards[speaker][talkId] = true;
+            }
+        }
+
+        // any rewards to pay?
+        if (rewards == 0) {
+            return;
+        }
+
+        // reward the speaker
+        speaker.transfer(rewards);
+
+        // trigger the event
+        RewardEvent(speaker, rewards);
+    }
+
+
+    // check if a vote is closed for votes
+    // the grace time msut be greater than 15 minutes from the endTime
+    // returns true if votes are closed
+    function isVoteClosed(uint _talkId) public constant returns (bool) {
+        Talk memory talk = talks[_talkId];
+
+        if (bytes(talks[_talkId].title).length == 0) {
+            // do not exist
+            return false;
+        }
+
+        if (talk.canceled) {
+            // not active
+            return false;
+        }
+
+        uint currentTime = now;
+        if (currentTime < talk.startTime) {
+            // talk not started
+            return false;
+        }
+
+        // computer grace time (+/- 15 minutes from the end time)
+        uint graceTime = currentTime;
+        if (currentTime > talk.endTime) {
+            graceTime = currentTime - talk.endTime;
+        }
+        else {
+            graceTime = talk.endTime - currentTime;
+        }
+
+        if (graceTime > (15 * 60)) {
+            // vote is open
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
     // computer the reward earned by a speaker
     function computeReward(uint ratings, uint votes) internal returns (uint256) {
         return ((ratings * votes * REGISTRATION_PRICE) / 1000);

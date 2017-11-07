@@ -215,7 +215,7 @@ contract('Conference', function (accounts) {
         return conference.deployed().then(function(instance) {
             contractInstance = instance;
 
-            return contractInstance.cancelTalk(2);
+            return contractInstance.cancelTalk(2, {from: owner});
         }).then(function(receipt) {
             //check event
             assert.equal(receipt.logs.length, 1, "should have received one event");
