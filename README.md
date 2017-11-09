@@ -9,7 +9,7 @@ $ register attendees using crypto-currencies
 
 This source code is related to the University session given by ChainSkills (Sébastien Arbogast and Said Eloudrhiri) at Devoxx Belgium 2017.
 
-Check the video on YouTube: TBC
+Check the video on YouTube: https://www.youtube.com/watch?v=7LCHlkdibWg
 
 ## Disclaimers
 * This is just a sample application used for education purpose
